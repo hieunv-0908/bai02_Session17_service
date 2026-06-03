@@ -1,0 +1,16 @@
+Phân tích (bản ngắn, đơn giản):
+
+Vấn đề: trong `JwtAuthenticationFilter` ban đầu có gọi
+`tokenProvider.validateToken(jwt, null)` — truyền null cho UserDetails.
+Theo `JwtTokenProvider` mẫu, `validateToken` cần `UserDetails` để so sánh
+username. Truyền null sẽ khiến validateToken trả false và không thiết lập
+Authentication, dẫn tới lỗi 403 khi gọi API bảo vệ.
+
+Giải pháp: trước tiên trích username từ token, rồi tải `UserDetails`
+(bằng `UserDetailsService.loadUserByUsername(username)`), sau đó gọi
+`tokenProvider.validateToken(jwt, userDetails)`. Nếu hợp lệ thì tạo
+`UsernamePasswordAuthenticationToken` và đặt vào `SecurityContextHolder`.
+
+Ghi chú: cũng cần đảm bảo filter này được đăng ký chạy trước
+`UsernamePasswordAuthenticationFilter` trong cấu hình bảo mật.
+
